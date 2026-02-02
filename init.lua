@@ -6,7 +6,7 @@
 
 ---@type Mq
 local mq = require('mq')
-local LIP = require('lib.LIP')
+local LCP = require('lib.LCP')
 local ICONS = require('mq.Icons')
 require 'ImGui'
 
@@ -106,7 +106,7 @@ end
 -------------------------------------------------
 
 local function save_settings()
-    LIP.save(Settings_Path, settings)
+    LCP.save(Settings_Path, settings)
 end
 
 local function loadset(name, action)
@@ -222,7 +222,7 @@ local function load_settings()
     Settings_Path = Conf_Dir..args[1]
 
     if file_exists(Settings_Path) then
-    settings = LIP.load(Settings_Path) or {}
+    settings = LCP.load(Settings_Path) or {}
     -- normalize saved gear slot IDs to numbers where possible
     for setName, setData in pairs(settings) do
         if type(setData) == 'table' then
