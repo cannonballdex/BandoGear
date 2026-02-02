@@ -182,25 +182,21 @@ end
 local function bandogear()
     -- Set a wider default size for the window (width, height).
     -- Adjust these numbers to taste (e.g. 700, 320).
-    ImGui.SetNextWindowSize(400, 300)
-    openGUI = ImGui.Begin('BandoGear - Gear Swapper', openGUI)
-    ImGui.SetNextItemWidth(150)
-    ImGui.Text('Add Set:')
-    ImGui.SameLine()
-    SaveSet,_ = ImGui.InputText('##SaveSet', SaveSet)
-    ImGui.SameLine()
-    if ImGui.Button(ICONS.FA_USER_PLUS) then
+    ImGui.SetNextWindowSize(300, 300)
+    openGUI = ImGui.Begin('BandoGear - By Cannonballdex', openGUI)
+
+    if ImGui.Button(string.format('%s Save Set', ICONS.FA_USER_PLUS)) then
         mq.cmdf('/loadset %s save', SaveSet)
     end
+    ImGui.SameLine()
     ImGui.SetNextItemWidth(150)
-    ImGui.Text('Remove Set:')
-    ImGui.SameLine()
-    DeleteSet,_ = ImGui.InputText('##DeleteSet', DeleteSet)
-    ImGui.SameLine()
-    if ImGui.Button(ICONS.FA_USER_TIMES) then
+    SaveSet,_ = ImGui.InputText('##SaveSet', SaveSet)
+    if ImGui.Button(string.format('%s Delete Set', ICONS.FA_USER_TIMES)) then
         mq.cmdf('/loadset %s delete', DeleteSet)
     end
-
+    ImGui.SameLine()
+    ImGui.SetNextItemWidth(150)
+    DeleteSet,_ = ImGui.InputText('##DeleteSet', DeleteSet)
     ImGui.Separator()
     ImGui.Text('Existing Sets')
 
