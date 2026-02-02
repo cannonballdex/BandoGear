@@ -10,6 +10,18 @@ local LCP = require('lib.LCP')
 local ICONS = require('mq.Icons')
 require 'ImGui'
 
+-- ImGui helper
+local function HelpMarker(desc)
+  if not desc then return end
+  if ImGui.IsItemHovered() then
+    ImGui.BeginTooltip()
+    ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35.0)
+    ImGui.Text(desc)
+    ImGui.PopTextWrapPos()
+    ImGui.EndTooltip()
+  end
+end
+
 -- Use a per-character settings file to keep databases independent per character
 local args = {'BandoGear.ini'}
 
@@ -210,10 +222,8 @@ local function pickup_and_equip_from_bags(itemID, bagItems, target_slot)
     for _,i in ipairs(normal_indices) do table.insert(try_indices, i) end
 
     -- Try each candidate index
-    local offset = 0
     for _, idx in ipairs(try_indices) do
-        local real_idx = idx - offset
-        local entry = bagItems[real_idx]
+        local entry = bagItems[idx]
         if not entry then goto continue_try end
 
         -- open pack if needed
@@ -258,12 +268,11 @@ local function pickup_and_equip_from_bags(itemID, bagItems, target_slot)
         local ok_cur2, newid = pcall(function() return mq.TLO.InvSlot(target_slot).Item.ID() end)
         if ok_cur2 and newid == itemID then
             -- remove used entry from bagItems
-            table.remove(bagItems, real_idx)
+            table.remove(bagItems, idx)
             return true
         end
 
         ::continue_try::
-        -- If we removed earlier entries, adjust offset (we didn't remove here unless equip succeeded)
     end
 
     return false
@@ -370,25 +379,47 @@ local function bandogear()
     openGUI = ImGui.Begin('BandoGear - By Cannonballdex', openGUI)
 
     if ImGui.Button(string.format('%s Save Set', ICONS.FA_USER_PLUS)) then
-        mq.cmdf('/loadset %s save', SaveSet)
+        mq.cmdf('/BandoGear %s save', SaveSet)
     end
+    HelpMarker('Enter a name (No Spaces) for the set to save, then click "Save Set".')
     ImGui.SameLine()
     ImGui.SetNextItemWidth(150)
     SaveSet,_ = ImGui.InputText('##SaveSet', SaveSet)
-    if ImGui.Button(string.format('%s Delete Set', ICONS.FA_USER_TIMES)) then
-        mq.cmdf('/loadset %s delete', DeleteSet)
-    end
-    ImGui.SameLine()
-    ImGui.SetNextItemWidth(150)
-    DeleteSet,_ = ImGui.InputText('##DeleteSet', DeleteSet)
+    
     ImGui.Separator()
     ImGui.Text('Existing Sets')
 
-    for name,_ in pairs(settings) do
-        if ImGui.Button(name) then
-            mq.cmdf('/loadset %s', name)
+    -- Build sorted list of set names for stable display
+    local setNames = {}
+    for name,_ in pairs(settings) do table.insert(setNames, name) end
+    table.sort(setNames, function(a,b) return tostring(a):lower() < tostring(b):lower() end)
+
+    -- Scrollable area for sets; using a child keeps the window tidy for many sets
+    ImGui.BeginChild('SetsList', 0, -ImGui.GetFrameHeightWithSpacing(), true)
+
+    if #setNames == 0 then
+        ImGui.TextColored(1,0.8,0.2,1, 'No saved sets')
+    else
+        for _, name in ipairs(setNames) do
+            ImGui.PushID(name)
+
+            -- Main set button (loads the set)
+            if ImGui.Button(name) then
+                mq.cmdf('/BandoGear %s', name)
+            end
+            HelpMarker('Click the Equip this set.')
+            -- Place delete button to the right of the set button
+            ImGui.SameLine()
+            if ImGui.Button(string.format('%s Delete Set', ICONS.FA_USER_TIMES)) then
+                mq.cmdf('/BandoGear %s delete', name)
+            end
+
+            ImGui.PopID()
         end
+        HelpMarker('Click the Delete button to remove the set.')
     end
+
+    ImGui.EndChild()
 
     ImGui.End()
 end
@@ -423,8 +454,7 @@ local function load_settings()
 end
 
 local function setup()
-    mq.bind('/ls', loadset)
-    mq.bind('/loadset', loadset)
+    mq.bind('/BandoGear', loadset)
     load_settings()
     mq.imgui.init('bandogear', bandogear)
     output('\ayBandoGear Loaded')
